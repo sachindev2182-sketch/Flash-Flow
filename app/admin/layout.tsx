@@ -1,33 +1,36 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import User from "@/models/User";
-import { connectDB } from "@/lib/db";
 import { adminAuth } from "@/lib/firebase-admin";
+import { connectDB } from "@/lib/db";
+import User from "@/models/User";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("authToken")?.value;
+  const token = (await cookies()).get("authToken")?.value;
 
   if (!token) {
     redirect("/login");
   }
 
+  let decoded;
+
   try {
-    const decoded = await adminAuth.verifyIdToken(token);
-
-    await connectDB();
-    const user = await User.findOne({ email: decoded.email });
-
-    if (!user || user.role !== "admin") {
-      redirect("/dashboard");
-    }
-
-    return <>{children}</>;
-  } catch (error) {
+    decoded = await adminAuth.verifySessionCookie(token, true);
+  } catch (err) {
+    console.error("Session verify error (admin):", err);
     redirect("/login");
   }
+
+  await connectDB();
+
+  const user = await User.findOne({ email: decoded.email });
+
+  if (!user || user.role !== "admin") {
+    redirect("/home");
+  }
+
+  return <>{children}</>;
 }

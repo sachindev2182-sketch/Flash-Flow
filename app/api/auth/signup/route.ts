@@ -28,13 +28,13 @@ export async function POST(req: Request) {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // delete old otp if exists
     await Otp.deleteMany({ email });
 
     await Otp.create({
       email,
       otp,
       type: "signup",
+      name,
       expires: new Date(Date.now() + 10 * 60 * 1000),
     });
 

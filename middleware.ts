@@ -10,13 +10,16 @@ export function middleware(request: NextRequest) {
     pathname === "/signup";
 
   const isProtectedPage =
-    pathname.startsWith("/dashboard") 
+    pathname.startsWith("/home") || pathname.startsWith("/category/men") || pathname.startsWith("/category/women") ||
+   pathname.startsWith("/category/kids") || pathname.startsWith("/wishlist") || pathname.startsWith("/category/beauty") || pathname.startsWith("/category/home") || pathname.startsWith("/admin")
+   || pathname.startsWith("/product") || pathname.startsWith("/address") || pathname.startsWith("/cart") || pathname.startsWith("/orders");
+
   if (!token && isProtectedPage) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/home", request.url));
   }
 
   return NextResponse.next();
@@ -27,9 +30,17 @@ export const config = {
     "/",
     "/login",
     "/signup",
-    "/dashboard/:path*",
-    "/transactions/:path*",
-    "/profile/:path*",
+    "/home/:path*",
     "/admin/:path*",
+    "/cart/:path*",
+    "/orders/:path*",
+    "/wishlist/:path*",
+    "/category/men/:path*",
+    "/category/women/:path*",
+    "/category/kids/:path*",
+    "/category/home/:path*",
+    "/category/beauty/:path*",
+    "/product/:path*",
+    "/address/:path*",
   ],
 };

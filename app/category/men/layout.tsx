@@ -1,0 +1,40 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import User from "@/models/User";
+import { adminAuth } from "@/lib/firebase-admin";
+import { connectDB } from "@/lib/db";
+
+export default async function MenCategoryLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const token = (await cookies()).get("authToken")?.value;
+
+  if (!token) {
+    redirect("/");
+  }
+
+  let decoded;
+
+  try {
+    decoded = await adminAuth.verifySessionCookie(token, true);
+  } catch (err) {
+    console.error("Session verify error (men category):", err);
+    redirect("/login");
+  }
+
+  await connectDB();
+
+  const user = await User.findOne({ email: decoded.email });
+
+  if (!user) {
+    redirect("/");
+  }
+
+   if (user.role === "admin") {
+     redirect("/admin");
+   }
+
+  return <>{children}</>;
+}

@@ -23,10 +23,12 @@ const UserSchema = new Schema({
 
   isVerified: {
     type: Boolean,
-    default: true, 
+    default: true,
   },
-
-
+  lastActive: {
+    type: Date,
+    default: Date.now,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

@@ -1,6 +1,7 @@
 import mongoose, { Schema, model, models } from "mongoose";
 
 const OtpSchema = new Schema({
+  name: { type: String },
   email: { type: String, required: true },
   otp: { type: String, required: true },
   type: { type: String, enum: ["signup", "login"], required: true },

@@ -1,19 +1,24 @@
+import CustomerReviews from '@/components/CustomerReviews';
+import FeaturesSection from '@/components/FeaturesSection';
+import Footer from '@/components/Footer';
+import HeroSection from '@/components/HeroSection';
+import HeroSlider from '@/components/HeroSlider';
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import Features from '@/components/Features';
-import HowItWorks from '@/components/HowItWorks';
-import TrustSection from '@/components/TrustSection';
-import Categories from '@/components/Categories';
+import TrendingCategories from '@/components/TrendingCategories';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] selection:bg-blue-100">
       <Navbar />
-      <Hero />
-      <Features />
-      <HowItWorks />
-      <TrustSection />
-      <Categories />
+
+      <main className="pt-16 sm:pt-20">
+        <HeroSlider />
+        <HeroSection />
+        <FeaturesSection />
+        <TrendingCategories />
+        <CustomerReviews />
+        <Footer />
+      </main>
     </div>
   );
 }
