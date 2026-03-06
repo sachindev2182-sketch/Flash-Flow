@@ -6,6 +6,7 @@ export interface Product {
   description: string;
   price: number;
   category: string;
+  subcategory: string; 
   image: string;
   isNewArrival: boolean;
   isTrending: boolean;
@@ -48,6 +49,7 @@ interface FetchProductsParams {
   page?: number;
   limit?: number;
   category?: string;
+  subcategory?: string; 
   search?: string;
 }
 
@@ -59,6 +61,7 @@ export const fetchAdminProducts = createAsyncThunk(
       if (params.page) searchParams.append('page', params.page.toString());
       if (params.limit) searchParams.append('limit', params.limit.toString());
       if (params.category && params.category !== 'all') searchParams.append('category', params.category);
+      if (params.subcategory && params.subcategory !== 'all') searchParams.append('subcategory', params.subcategory);
       if (params.search) searchParams.append('search', params.search);
 
       const response = await fetch(`/api/admin/products?${searchParams}`, {

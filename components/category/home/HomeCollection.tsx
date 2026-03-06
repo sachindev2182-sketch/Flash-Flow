@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useState, useCallback, useMemo } from "react";
+import { memo, useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,6 +12,13 @@ import {
   Trash2,
   CheckCircle,
   AlertCircle,
+  Home,
+  Sofa,
+  Utensils,
+  ShoppingBasket,
+  Tv,
+  Smartphone,
+  BookOpen,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
@@ -32,6 +39,221 @@ import {
 } from "@/lib/redux/features/cart/cartSlice";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
+const SubcategoryCard = memo(({ subcategory, icon: Icon, isSelected, onClick }: { 
+  subcategory: string; 
+  icon: any; 
+  isSelected: boolean; 
+  onClick: () => void;
+}) => {
+  const getSubcategoryImage = () => {
+    switch(subcategory) {
+      case "Home decor":
+        return "/home_decor.png";
+      case "Furnishing":
+        return "/home_furnishing.png";
+      case "Kitchen":
+        return "/home_kitchen.png";
+      case "Groceries":
+        return "/home_groceries.png";
+      case "Electronics":
+        return "/home_electronics.png";
+      case "Gadgets":
+        return "/home_gadgets.png";
+      case "Books":
+        return "/home_books.png";
+      default:
+        return "/home_product_1.webp";
+    }
+  };
+
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`cursor-pointer rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex-none w-[140px] sm:w-[160px] ${
+        isSelected ? 'ring-2 ring-amber-600 ring-offset-2' : ''
+      }`}
+    >
+      <div className="relative h-24 sm:h-28 w-full bg-gray-100">
+        <img
+          src={getSubcategoryImage()}
+          alt={subcategory}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=" + subcategory;
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute bottom-2 left-2 text-white">
+          <div className="flex items-center gap-1">
+            <Icon size={14} className="text-white" />
+            <span className="text-xs font-bold">{subcategory}</span>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+SubcategoryCard.displayName = "SubcategoryCard";
+
+const SubcategoriesSlider = memo(({ 
+  subcategories, 
+  selectedSubcategory, 
+  onSubcategoryClick 
+}: { 
+  subcategories: Array<{ name: string; icon: any }>;
+  selectedSubcategory: string | null;
+  onSubcategoryClick: (subcategory: string) => void;
+}) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640); 
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const checkScrollPosition = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      setShowLeftArrow(scrollLeft > 10);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScrollPosition);
+      setTimeout(checkScrollPosition, 100);
+      
+      return () => container.removeEventListener('scroll', checkScrollPosition);
+    }
+  }, [checkScrollPosition]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 280; 
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  if (!isMobile) {
+    return (
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Shop by Category</h3>
+        <div className="grid grid-cols-7 gap-3">
+          {subcategories.map((sub) => (
+            <SubcategoryCard
+              key={sub.name}
+              subcategory={sub.name}
+              icon={sub.icon}
+              isSelected={selectedSubcategory === sub.name}
+              onClick={() => onSubcategoryClick(sub.name)}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 relative">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-700">Shop by Category</h3>
+        
+        {/* Mobile scroll hint */}
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-400">Swipe →</span>
+        </div>
+      </div>
+
+      <div className="relative">
+        {showLeftArrow && (
+          <button
+            onClick={() => scroll('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all border border-gray-200"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft size={18} className="text-gray-700" />
+          </button>
+        )}
+
+        {showRightArrow && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-all border border-gray-200"
+            aria-label="Scroll right"
+          >
+            <ChevronRight size={18} className="text-gray-700" />
+          </button>
+        )}
+
+        {/* Scroll Container */}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto scrollbar-hide pb-2 -mx-2 px-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <div className="flex gap-3">
+            <AnimatePresence mode="popLayout">
+              {subcategories.map((sub) => (
+                <SubcategoryCard
+                  key={sub.name}
+                  subcategory={sub.name}
+                  icon={sub.icon}
+                  isSelected={selectedSubcategory === sub.name}
+                  onClick={() => onSubcategoryClick(sub.name)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Scroll Progress Indicator */}
+        <div className="flex justify-center mt-2">
+          <div className="flex gap-1">
+            {subcategories.map((_, index) => {
+              const activeIndex = selectedSubcategory 
+                ? subcategories.findIndex(s => s.name === selectedSubcategory)
+                : 0;
+              
+              if (Math.abs(index - activeIndex) <= 2) {
+                return (
+                  <div
+                    key={index}
+                    className={`h-1 rounded-full transition-all duration-300 ${
+                      index === activeIndex
+                        ? 'w-6 bg-amber-600'
+                        : 'w-1 bg-gray-300'
+                    }`}
+                  />
+                );
+              }
+              return null;
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+SubcategoriesSlider.displayName = "SubcategoriesSlider";
 
 const ProductCard = memo(
   ({ product, user }: { product: CategoryProduct; user: any }) => {
@@ -97,7 +319,7 @@ const ProductCard = memo(
             description: product.description || "",
             price: product.price || 0,
             image: product.image || "/placeholder-image.jpg",
-            category: "Home", // Capitalized for wishlist
+            category: "Home",
           };
           await dispatch(addToWishlist(wishlistItem)).unwrap();
           showToastMessage(`${product.title} added to wishlist`);
@@ -457,6 +679,7 @@ interface HomeCollectionProps {
 // Main HomeCollection Component
 export default memo(function HomeCollection({ user }: HomeCollectionProps) {
   const dispatch = useAppDispatch();
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
 
   const { homeProducts, homePagination, loading, error } = useAppSelector(
     (state) => ({
@@ -467,7 +690,16 @@ export default memo(function HomeCollection({ user }: HomeCollectionProps) {
     }),
   );
 
-  // Fetch wishlist and cart when component mounts
+  const subcategories = [
+    { name: "Home decor", icon: Home },
+    { name: "Furnishing", icon: Sofa },
+    { name: "Kitchen", icon: Utensils },
+    { name: "Groceries", icon: ShoppingBasket },
+    { name: "Electronics", icon: Tv },
+    { name: "Gadgets", icon: Smartphone },
+    { name: "Books", icon: BookOpen },
+  ];
+
   useEffect(() => {
     if (user) {
       dispatch(fetchWishlist());
@@ -480,9 +712,15 @@ export default memo(function HomeCollection({ user }: HomeCollectionProps) {
       fetchHomeCategoryProducts({
         page: homePagination.page,
         limit: homePagination.productsPerPage,
+        subcategory: selectedSubcategory || undefined,
       }),
     );
-  }, [dispatch, homePagination.page, homePagination.productsPerPage]);
+  }, [dispatch, homePagination.page, homePagination.productsPerPage, selectedSubcategory]);
+
+  const handleSubcategoryClick = (subcategory: string) => {
+    setSelectedSubcategory(prev => prev === subcategory ? null : subcategory);
+    dispatch(setHomePage(1));
+  };
 
   const handlePageChange = useCallback(
     (page: number) => {
@@ -542,28 +780,40 @@ export default memo(function HomeCollection({ user }: HomeCollectionProps) {
   return (
     <section className="w-full py-3 sm:py-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-gray-900">
             Home & Living
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Showing{" "}
-            {(homePagination.page - 1) * homePagination.productsPerPage + 1} -{" "}
-            {Math.min(
-              homePagination.page * homePagination.productsPerPage,
-              homePagination.totalProducts,
-            )}{" "}
-            of {homePagination.totalProducts} products
+          <p className="text-xs text-gray-500">
+            {homePagination.totalProducts} products
+            {selectedSubcategory && ` in ${selectedSubcategory}`}
           </p>
         </div>
+        
+        {/* Clear Filter Button */}
+        {selectedSubcategory && (
+          <button
+            onClick={() => setSelectedSubcategory(null)}
+            className="text-xs text-amber-600 font-medium hover:underline"
+          >
+            Clear Filter
+          </button>
+        )}
       </div>
+
+      {/* Subcategories Slider  */}
+      <SubcategoriesSlider
+        subcategories={subcategories}
+        selectedSubcategory={selectedSubcategory}
+        onSubcategoryClick={handleSubcategoryClick}
+      />
 
       {/* Products Grid */}
       <div id="products-grid">
         <AnimatePresence mode="wait">
           <motion.div
-            key={homePagination.page}
+            key={selectedSubcategory || 'all'}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

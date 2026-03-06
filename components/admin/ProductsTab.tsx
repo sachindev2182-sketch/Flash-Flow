@@ -15,7 +15,8 @@ import {
   Loader2,
   Sparkles,
   TrendingUp,
-  Filter
+  Filter,
+  Grid3x3
 } from "lucide-react";
 import Image from "next/image";
 import AddProductForm from "./AddProductForm";
@@ -27,6 +28,7 @@ import {
   setPagination,
   clearProductsError
 } from "@/lib/redux/features/products/productsAdminSlice";
+import { getSubcategories } from "@/lib/utils/categoryUtils";
 
 export default function ProductsTab() {
   const dispatch = useAppDispatch();
@@ -43,6 +45,8 @@ export default function ProductsTab() {
   });
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [subcategoryFilter, setSubcategoryFilter] = useState("all");
+  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -58,7 +62,16 @@ export default function ProductsTab() {
     { value: "home", label: "Home" },
   ];
 
-  // Track window width for responsive pagination
+  useEffect(() => {
+    if (categoryFilter && categoryFilter !== "all") {
+      setAvailableSubcategories(getSubcategories(categoryFilter));
+      setSubcategoryFilter("all");
+    } else {
+      setAvailableSubcategories([]);
+      setSubcategoryFilter("all");
+    }
+  }, [categoryFilter]);
+
   useEffect(() => {
     setWindowWidth(window.innerWidth);
     const handleResize = () => setWindowWidth(window.innerWidth);
@@ -66,45 +79,46 @@ export default function ProductsTab() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Create a memoized fetch function that uses current filter values
-  const fetchProducts = useCallback((page: number = pagination.page, category: string = categoryFilter, searchTerm: string = search) => {
+  const fetchProducts = useCallback((page: number = pagination.page, category: string = categoryFilter, subcategory: string = subcategoryFilter, searchTerm: string = search) => {
     dispatch(fetchAdminProducts({
       page,
       limit: pagination.limit,
       category: category !== "all" ? category : undefined,
+      subcategory: subcategory !== "all" ? subcategory : undefined,
       search: searchTerm || undefined,
     }));
   }, [dispatch, pagination.limit]);
 
-  // Handle category filter change
   const handleCategoryChange = (newCategory: string) => {
     setCategoryFilter(newCategory);
     dispatch(setPagination({ page: 1 }));
-    fetchProducts(1, newCategory, search);
+    fetchProducts(1, newCategory, subcategoryFilter, search);
   };
 
-  // Handle search with debounce
+  const handleSubcategoryChange = (newSubcategory: string) => {
+    setSubcategoryFilter(newSubcategory);
+    dispatch(setPagination({ page: 1 }));
+    fetchProducts(1, categoryFilter, newSubcategory, search);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       dispatch(setPagination({ page: 1 }));
-      fetchProducts(1, categoryFilter, search);
+      fetchProducts(1, categoryFilter, subcategoryFilter, search);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [search, categoryFilter, fetchProducts]);
+  }, [search, categoryFilter, subcategoryFilter, fetchProducts]);
 
-  // Handle page change
   const handlePageChange = (newPage: number) => {
     dispatch(setPagination({ page: newPage }));
-    fetchProducts(newPage, categoryFilter, search);
+    fetchProducts(newPage, categoryFilter, subcategoryFilter, search);
   };
 
-  // Initial fetch
   useEffect(() => {
-    fetchProducts(1, categoryFilter, search);
+    fetchProducts(1, categoryFilter, subcategoryFilter, search);
   }, []);
 
-  // Handle error from Redux
   useEffect(() => {
     if (error) {
       showToast(error, "error");
@@ -121,7 +135,7 @@ export default function ProductsTab() {
     const result = await dispatch(deleteProduct(id));
     if (deleteProduct.fulfilled.match(result)) {
       showToast("Product deleted successfully", "success");
-      fetchProducts(pagination.page, categoryFilter, search);
+      fetchProducts(pagination.page, categoryFilter, subcategoryFilter, search);
     } else {
       showToast("Failed to delete product", "error");
     }
@@ -139,20 +153,41 @@ export default function ProductsTab() {
     return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-600";
   };
 
-  // Determine if device is iPad (768px - 1180px)
-  const isIPad = windowWidth >= 768 && windowWidth <= 1180;
-  
-  // Generate visible page numbers with responsive logic
+  const getSubcategoryColor = (subcategory: string) => {
+    const colors: Record<string, string> = {
+      Clothing: "bg-blue-50 text-blue-600",
+      Footwear: "bg-indigo-50 text-indigo-600",
+      Sports: "bg-green-50 text-green-600",
+      Accessories: "bg-purple-50 text-purple-600",
+      Jewelery: "bg-yellow-50 text-yellow-600",
+      Beauty: "bg-pink-50 text-pink-600",
+      Boys: "bg-cyan-50 text-cyan-600",
+      Girls: "bg-rose-50 text-rose-600",
+      Toys: "bg-orange-50 text-orange-600",
+      "Home decor": "bg-amber-50 text-amber-600",
+      Furnishing: "bg-stone-50 text-stone-600",
+      Kitchen: "bg-lime-50 text-lime-600",
+      Groceries: "bg-emerald-50 text-emerald-600",
+      Electronics: "bg-sky-50 text-sky-600",
+      Gadgets: "bg-violet-50 text-violet-600",
+      Books: "bg-gray-50 text-gray-600",
+      Makeup: "bg-rose-50 text-rose-600",
+      Skincare: "bg-teal-50 text-teal-600",
+      Haircare: "bg-fuchsia-50 text-fuchsia-600",
+      Fragrance: "bg-purple-50 text-purple-600",
+    };
+    return colors[subcategory] || "bg-gray-50 text-gray-600";
+  };
+
   const getVisiblePages = () => {
-    // iPad: show 5 pages, Mobile: show 3 pages, Desktop: show 7 pages
-    let delta = 2; // Default for desktop
+    let delta = 2;
     
     if (windowWidth < 640) {
-      delta = 1; // Mobile: show 3 pages (current +-1)
+      delta = 1;
     } else if (windowWidth >= 640 && windowWidth < 1024) {
-      delta = 2; // iPad/Tablet: show 5 pages (current +-2)
+      delta = 2;
     } else {
-      delta = 3; // Desktop: show 7 pages (current +-3)
+      delta = 3;
     }
     
     const range: number[] = [];
@@ -226,7 +261,7 @@ export default function ProductsTab() {
           </div>
 
           {/* Category Filter */}
-          <div className="sm:w-44 lg:w-48 relative">
+          <div className="sm:w-36 lg:w-40 relative">
             <Filter size={16} className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#A3AED0]" />
             <select
               value={categoryFilter}
@@ -240,6 +275,25 @@ export default function ProductsTab() {
               ))}
             </select>
           </div>
+
+          {/* Subcategory Filter  */}
+          {categoryFilter !== "all" && availableSubcategories.length > 0 && (
+            <div className="sm:w-44 lg:w-48 relative">
+              <Grid3x3 size={16} className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#A3AED0]" />
+              <select
+                value={subcategoryFilter}
+                onChange={(e) => handleSubcategoryChange(e.target.value)}
+                className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 rounded-xl bg-[#F4F7FE] border-2 border-transparent focus:border-[#5D5FEF] focus:bg-white font-semibold text-sm transition-all outline-none text-[#1B2559] appearance-none cursor-pointer"
+              >
+                <option value="all">All Subcategories</option>
+                {availableSubcategories.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -258,7 +312,7 @@ export default function ProductsTab() {
           </div>
           <h3 className="text-lg sm:text-xl font-black text-[#1B2559] mb-2">No Products Found</h3>
           <p className="text-[#A3AED0] font-semibold text-xs sm:text-sm">
-            {search || categoryFilter !== "all" 
+            {search || categoryFilter !== "all" || subcategoryFilter !== "all"
               ? "Try adjusting your filters" 
               : "Get started by adding your first product"}
           </p>
@@ -308,6 +362,15 @@ export default function ProductsTab() {
                     </span>
                   </div>
 
+                  {/* Subcategory Badge */}
+                  {product.subcategory && (
+                    <div className="mb-2">
+                      <span className={`px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-medium ${getSubcategoryColor(product.subcategory)}`}>
+                        {product.subcategory}
+                      </span>
+                    </div>
+                  )}
+
                   <p className="text-xs sm:text-sm text-[#A3AED0] line-clamp-2 mb-2 sm:mb-3">
                     {product.description}
                   </p>
@@ -345,7 +408,7 @@ export default function ProductsTab() {
             ))}
           </div>
 
-          {/* Pagination  */}
+          {/* Pagination */}
           {pagination.pages > 1 && (
             <div className="mt-6 relative z-10 mb-12 sm:mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100">
               <p className="text-xs sm:text-sm font-bold text-[#A3AED0] order-2 sm:order-1">
@@ -366,7 +429,7 @@ export default function ProductsTab() {
                   <ChevronLeft size={16} className="sm:w-[18px] sm:h-[18px]" />
                 </button>
 
-                {/* Page Numbers - Responsive for iPad */}
+                {/* Page Numbers */}
                 <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap">
                   {getVisiblePages().map((page, index) => (
                     page === '...' ? (
@@ -414,7 +477,7 @@ export default function ProductsTab() {
             onClose={() => setShowAddForm(false)}
             onSuccess={() => {
               setShowAddForm(false);
-              fetchProducts(1, categoryFilter, search);
+              fetchProducts(1, categoryFilter, subcategoryFilter, search);
               showToast("Product created successfully", "success");
             }}
           />
@@ -429,7 +492,7 @@ export default function ProductsTab() {
             onClose={() => setEditingProduct(null)}
             onSuccess={() => {
               setEditingProduct(null);
-              fetchProducts(pagination.page, categoryFilter, search);
+              fetchProducts(pagination.page, categoryFilter, subcategoryFilter, search);
               showToast("Product updated successfully", "success");
             }}
           />
@@ -474,9 +537,16 @@ export default function ProductsTab() {
                       Added by {viewingProduct.createdBy?.name || 'Admin'}
                     </p>
                   </div>
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase ${getCategoryColor(viewingProduct.category)} w-fit`}>
-                    {viewingProduct.category}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase ${getCategoryColor(viewingProduct.category)} w-fit`}>
+                      {viewingProduct.category}
+                    </span>
+                    {viewingProduct.subcategory && (
+                      <span className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium ${getSubcategoryColor(viewingProduct.subcategory)} w-fit`}>
+                        {viewingProduct.subcategory}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
@@ -584,4 +654,4 @@ export default function ProductsTab() {
       </AnimatePresence>
     </div>
   );
-} 
+}

@@ -29,22 +29,37 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, price, category, image, isNewArrival, isTrending } = body;
+    const { title, description, price, category, subcategory, image, isNewArrival, isTrending } = body;
 
     // Validate required fields
-    if (!title || !description || !price || !category || !image) {
+    if (!title || !description || !price || !category || !subcategory || !image) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Create product
+    const validSubcategories: Record<string, string[]> = {
+      men: ["Clothing", "Footwear", "Sports", "Accessories"],
+      women: ["Clothing", "Footwear", "Accessories", "Jewelery", "Beauty"],
+      kids: ["Boys", "Girls", "Footwear", "Toys"],
+      home: ["Home decor", "Furnishing", "Kitchen", "Groceries", "Electronics", "Gadgets", "Books"],
+      beauty: ["Makeup", "Skincare", "Haircare", "Fragrance"],
+    };
+
+    if (!validSubcategories[category]?.includes(subcategory)) {
+      return NextResponse.json(
+        { error: "Invalid subcategory for the selected category" },
+        { status: 400 }
+      );
+    }
+
     const product = await Product.create({
       title,
       description,
       price,
       category,
+      subcategory,
       image,
       isNewArrival: isNewArrival || false,
       isTrending: isTrending || false,
@@ -92,15 +107,21 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const category = searchParams.get("category");
+    const subcategory = searchParams.get("subcategory");
     const search = searchParams.get("search");
 
     const skip = (page - 1) * limit;
 
-    // Build filter
     let filter: any = {};
+    
     if (category && category !== "all") {
       filter.category = category;
     }
+    
+    if (subcategory && subcategory !== "all") {
+      filter.subcategory = subcategory;
+    }
+    
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },

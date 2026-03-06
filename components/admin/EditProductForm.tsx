@@ -39,6 +39,7 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     description: "",
     price: "",
     category: "men",
+    subcategory: "",
     image: "",
     isNewArrival: false,
     isTrending: false,
@@ -54,7 +55,22 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     { value: "home", label: "Home", color: "amber" },
   ];
 
-  // Fetch product data
+  const validSubcategories: Record<string, string[]> = {
+    men: ["Clothing", "Footwear", "Sports", "Accessories"],
+    women: ["Clothing", "Footwear", "Accessories", "Jewelery", "Beauty"],
+    kids: ["Boys", "Girls", "Footwear", "Toys"],
+    home: ["Home decor", "Furnishing", "Kitchen", "Groceries", "Electronics", "Gadgets", "Books"],
+    beauty: ["Makeup", "Skincare", "Haircare", "Fragrance"],
+  };
+
+  const defaultSubcategories: Record<string, string> = {
+    men: "Clothing",
+    women: "Clothing",
+    kids: "Boys",
+    home: "Home decor",
+    beauty: "Makeup",
+  };
+
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -73,12 +89,12 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
           description: product.description,
           price: product.price.toString(),
           category: product.category,
+          subcategory: product.subcategory || defaultSubcategories[product.category] || "",
           image: product.image,
           isNewArrival: product.isNewArrival,
           isTrending: product.isTrending,
         });
 
-        // Set preview image if exists
         if (product.image) {
           setPreviewImage(product.image);
         }
@@ -93,7 +109,6 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     fetchProduct();
   }, [productId]);
 
-  // Handle successful upload
   useEffect(() => {
     if (uploadedImage) {
       setFormData(prev => ({ ...prev, image: uploadedImage.url }));
@@ -102,7 +117,6 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     }
   }, [uploadedImage, dispatch]);
 
-  // Handle upload error
   useEffect(() => {
     if (uploadError) {
       setLocalUploadError(uploadError);
@@ -135,7 +149,6 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     };
     reader.readAsDataURL(file);
 
-    // Upload file using Redux action
     dispatch(uploadImage(file));
   };
 
@@ -146,6 +159,14 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
     dispatch(clearUpload());
   };
 
+  const handleCategoryChange = (newCategory: string) => {
+    setFormData({ 
+      ...formData, 
+      category: newCategory, 
+      subcategory: defaultSubcategories[newCategory] || "" 
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -153,6 +174,19 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
       setLocalUploadError("Please upload an image");
       return;
     }
+
+    if (!formData.subcategory) {
+      setLocalUploadError("Please select a subcategory");
+      return;
+    }
+
+    // Validate subcategory matches category
+    if (!validSubcategories[formData.category]?.includes(formData.subcategory)) {
+      setLocalUploadError(`"${formData.subcategory}" is not a valid subcategory for ${formData.category}`);
+      return;
+    }
+
+    console.log(" Submitting updated product:", formData);
 
     const result = await dispatch(updateProduct({
       id: productId,
@@ -223,7 +257,6 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-6">
-          {/* Image Upload Section */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-xs font-black uppercase text-[#A3AED0] tracking-wider ml-1">
               <ImageIcon size={14} className="text-[#5D5FEF]" />
@@ -324,7 +357,6 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
 
           {/* Price and Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Price */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-xs font-black uppercase text-[#A3AED0] tracking-wider ml-1">
                 <IndianRupee size={14} className="text-[#5D5FEF]" />
@@ -353,7 +385,7 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
               <select
                 required
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="w-full px-5 py-4 rounded-2xl bg-[#F4F7FE] border-2 border-transparent focus:border-[#5D5FEF] focus:bg-white font-semibold transition-all outline-none text-[#1B2559] appearance-none cursor-pointer"
               >
                 {categories.map((cat) => (
@@ -365,9 +397,68 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
             </div>
           </div>
 
+          {/* Subcategory  */}
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-xs font-black uppercase text-[#A3AED0] tracking-wider ml-1">
+              <Grid3x3 size={14} className="text-[#5D5FEF]" />
+              Subcategory
+            </label>
+            <select
+              required
+              value={formData.subcategory}
+              onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+              className="w-full px-5 py-4 rounded-2xl bg-[#F4F7FE] border-2 border-transparent focus:border-[#5D5FEF] focus:bg-white font-semibold transition-all outline-none text-[#1B2559] appearance-none cursor-pointer"
+            >
+              <option value="">Select subcategory</option>
+              {formData.category === "men" && (
+                <>
+                  <option value="Clothing">Clothing</option>
+                  <option value="Footwear">Footwear</option>
+                  <option value="Sports">Sports</option>
+                  <option value="Accessories">Accessories</option>
+                </>
+              )}
+              {formData.category === "women" && (
+                <>
+                  <option value="Clothing">Clothing</option>
+                  <option value="Footwear">Footwear</option>
+                  <option value="Accessories">Accessories</option>
+                  <option value="Jewelery">Jewelery</option>
+                  <option value="Beauty">Beauty</option>
+                </>
+              )}
+              {formData.category === "kids" && (
+                <>
+                  <option value="Boys">Boys</option>
+                  <option value="Girls">Girls</option>
+                  <option value="Footwear">Footwear</option>
+                  <option value="Toys">Toys</option>
+                </>
+              )}
+              {formData.category === "home" && (
+                <>
+                  <option value="Home decor">Home decor</option>
+                  <option value="Furnishing">Furnishing</option>
+                  <option value="Kitchen">Kitchen</option>
+                  <option value="Groceries">Groceries</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Gadgets">Gadgets</option>
+                  <option value="Books">Books</option>
+                </>
+              )}
+              {formData.category === "beauty" && (
+                <>
+                  <option value="Makeup">Makeup</option>
+                  <option value="Skincare">Skincare</option>
+                  <option value="Haircare">Haircare</option>
+                  <option value="Fragrance">Fragrance</option>
+                </>
+              )}
+            </select>
+          </div>
+
           {/* Toggle Options */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            {/* New Arrival Toggle */}
             <label className="flex items-center justify-between p-4 rounded-2xl bg-[#F4F7FE] cursor-pointer group hover:bg-[#E9EDF7] transition-all">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
@@ -436,7 +527,7 @@ export default function EditProductForm({ productId, onClose, onSuccess }: EditP
             </button>
             <button
               type="submit"
-              disabled={operationLoading || uploading || !formData.image}
+              disabled={operationLoading || uploading || !formData.image || !formData.subcategory}
               className="py-4 rounded-2xl font-black text-white bg-gradient-to-r from-[#1B2559] to-[#5D5FEF] hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {operationLoading ? (

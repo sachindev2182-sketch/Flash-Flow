@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
 export interface CategoryProduct {
   id: number;
@@ -18,42 +18,42 @@ interface CategoryProductsState {
   beautyProducts: CategoryProduct[];
   kidsProducts: CategoryProduct[];
   homeProducts: CategoryProduct[];
-  
+
   menPagination: {
     page: number;
     totalPages: number;
     totalProducts: number;
     productsPerPage: number;
   };
-  
+
   womenPagination: {
     page: number;
     totalPages: number;
     totalProducts: number;
     productsPerPage: number;
   };
-  
+
   beautyPagination: {
     page: number;
     totalPages: number;
     totalProducts: number;
     productsPerPage: number;
   };
-  
+
   kidsPagination: {
     page: number;
     totalPages: number;
     totalProducts: number;
     productsPerPage: number;
   };
-  
+
   homePagination: {
     page: number;
     totalPages: number;
     totalProducts: number;
     productsPerPage: number;
   };
-  
+
   loading: {
     men: boolean;
     women: boolean;
@@ -61,7 +61,7 @@ interface CategoryProductsState {
     kids: boolean;
     home: boolean;
   };
-  
+
   error: {
     men: string | null;
     women: string | null;
@@ -77,42 +77,42 @@ const initialState: CategoryProductsState = {
   beautyProducts: [],
   kidsProducts: [],
   homeProducts: [],
-  
+
   menPagination: {
     page: 1,
     totalPages: 1,
     totalProducts: 0,
     productsPerPage: 10,
   },
-  
+
   womenPagination: {
     page: 1,
     totalPages: 1,
     totalProducts: 0,
     productsPerPage: 10,
   },
-  
+
   beautyPagination: {
     page: 1,
     totalPages: 1,
     totalProducts: 0,
     productsPerPage: 10,
   },
-  
+
   kidsPagination: {
     page: 1,
     totalPages: 1,
     totalProducts: 0,
     productsPerPage: 10,
   },
-  
+
   homePagination: {
     page: 1,
     totalPages: 1,
     totalProducts: 0,
     productsPerPage: 10,
   },
-  
+
   loading: {
     men: false,
     women: false,
@@ -120,7 +120,7 @@ const initialState: CategoryProductsState = {
     kids: false,
     home: false,
   },
-  
+
   error: {
     men: null,
     women: null,
@@ -131,117 +131,196 @@ const initialState: CategoryProductsState = {
 };
 
 // Fetch men products with pagination
+// Update the fetch function to include subcategory
 export const fetchMenCategoryProducts = createAsyncThunk(
-  'categoryProducts/fetchMen',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }, { rejectWithValue }) => {
+  "categoryProducts/fetchMen",
+  async (
+    {
+      page = 1,
+      limit = 10,
+      subcategory,
+    }: { page?: number; limit?: number; subcategory?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await fetch(`/api/products?category=men&page=${page}&limit=${limit}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch men products');
+      let url = `/api/products?category=men&page=${page}&limit=${limit}`;
+      if (subcategory) {
+        url += `&subcategory=${encodeURIComponent(subcategory)}`;
       }
-      
-      const data = await response.json();
-      return {
-        products: data.products,
-        pagination: data.pagination
-      };
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch men products');
-    }
-  }
-);
 
-// Fetch women products with pagination
-export const fetchWomenCategoryProducts = createAsyncThunk(
-  'categoryProducts/fetchWomen',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`/api/products?category=women&page=${page}&limit=${limit}`);
-      
+      const response = await fetch(url);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch women products');
+        throw new Error("Failed to fetch men products");
       }
-      
+
       const data = await response.json();
       return {
         products: data.products,
-        pagination: data.pagination
+        pagination: data.pagination,
       };
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch women products');
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to fetch men products",
+      );
     }
-  }
+  },
+);
+// Fetch women products with pagination
+// Update the fetch function to include subcategory for women
+export const fetchWomenCategoryProducts = createAsyncThunk(
+  "categoryProducts/fetchWomen",
+  async (
+    {
+      page = 1,
+      limit = 10,
+      subcategory,
+    }: { page?: number; limit?: number; subcategory?: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      let url = `/api/products?category=women&page=${page}&limit=${limit}`;
+      if (subcategory) {
+        url += `&subcategory=${encodeURIComponent(subcategory)}`;
+      }
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch women products");
+      }
+
+      const data = await response.json();
+      return {
+        products: data.products,
+        pagination: data.pagination,
+      };
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch women products",
+      );
+    }
+  },
 );
 
 // Fetch beauty products with pagination
 export const fetchBeautyCategoryProducts = createAsyncThunk(
-  'categoryProducts/fetchBeauty',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }, { rejectWithValue }) => {
+  "categoryProducts/fetchBeauty",
+  async (
+    {
+      page = 1,
+      limit = 10,
+      subcategory,
+    }: { page?: number; limit?: number; subcategory?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await fetch(`/api/products?category=beauty&page=${page}&limit=${limit}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch beauty products');
+      let url = `/api/products?category=beauty&page=${page}&limit=${limit}`;
+      if (subcategory) {
+        url += `&subcategory=${encodeURIComponent(subcategory)}`;
       }
-      
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch beauty products");
+      }
+
       const data = await response.json();
       return {
         products: data.products,
-        pagination: data.pagination
+        pagination: data.pagination,
       };
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch beauty products');
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch beauty products",
+      );
     }
-  }
+  },
 );
 
 // Fetch kids products with pagination
 export const fetchKidsCategoryProducts = createAsyncThunk(
-  'categoryProducts/fetchKids',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }, { rejectWithValue }) => {
+  "categoryProducts/fetchKids",
+  async (
+    {
+      page = 1,
+      limit = 10,
+      subcategory,
+    }: { page?: number; limit?: number; subcategory?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await fetch(`/api/products?category=kids&page=${page}&limit=${limit}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch kids products');
+      let url = `/api/products?category=kids&page=${page}&limit=${limit}`;
+      if (subcategory) {
+        url += `&subcategory=${encodeURIComponent(subcategory)}`;
       }
-      
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch kids products");
+      }
+
       const data = await response.json();
       return {
         products: data.products,
-        pagination: data.pagination
+        pagination: data.pagination,
       };
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch kids products');
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch kids products",
+      );
     }
-  }
+  },
 );
 
 // Fetch home products with pagination
 export const fetchHomeCategoryProducts = createAsyncThunk(
-  'categoryProducts/fetchHome',
-  async ({ page = 1, limit = 10 }: { page?: number; limit?: number }, { rejectWithValue }) => {
+  "categoryProducts/fetchHome",
+  async (
+    {
+      page = 1,
+      limit = 10,
+      subcategory,
+    }: { page?: number; limit?: number; subcategory?: string },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await fetch(`/api/products?category=home&page=${page}&limit=${limit}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch home products');
+      let url = `/api/products?category=home&page=${page}&limit=${limit}`;
+      if (subcategory) {
+        url += `&subcategory=${encodeURIComponent(subcategory)}`;
       }
-      
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch home products");
+      }
+
       const data = await response.json();
       return {
         products: data.products,
-        pagination: data.pagination
+        pagination: data.pagination,
       };
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch home products');
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch home products",
+      );
     }
-  }
+  },
 );
 
 const categoryProductsSlice = createSlice({
-  name: 'categoryProducts',
+  name: "categoryProducts",
   initialState,
   reducers: {
     setMenPage: (state, action: PayloadAction<number>) => {
@@ -326,7 +405,7 @@ const categoryProductsSlice = createSlice({
         state.loading.men = false;
         state.error.men = action.payload as string;
       })
-      
+
       // Women Products
       .addCase(fetchWomenCategoryProducts.pending, (state) => {
         state.loading.women = true;
@@ -346,7 +425,7 @@ const categoryProductsSlice = createSlice({
         state.loading.women = false;
         state.error.women = action.payload as string;
       })
-      
+
       // Beauty Products
       .addCase(fetchBeautyCategoryProducts.pending, (state) => {
         state.loading.beauty = true;
@@ -366,10 +445,10 @@ const categoryProductsSlice = createSlice({
         state.loading.beauty = false;
         state.error.beauty = action.payload as string;
       })
-      
+
       // Kids Products
       .addCase(fetchKidsCategoryProducts.pending, (state) => {
-        state.loading.kids = true;  
+        state.loading.kids = true;
         state.error.kids = null;
       })
       .addCase(fetchKidsCategoryProducts.fulfilled, (state, action) => {
@@ -386,7 +465,7 @@ const categoryProductsSlice = createSlice({
         state.loading.kids = false;
         state.error.kids = action.payload as string;
       })
-      
+
       // Home Products
       .addCase(fetchHomeCategoryProducts.pending, (state) => {
         state.loading.home = true;
@@ -409,17 +488,17 @@ const categoryProductsSlice = createSlice({
   },
 });
 
-export const { 
-  setMenPage, 
-  setWomenPage, 
-  setBeautyPage, 
-  setKidsPage, 
-  setHomePage, 
-  clearMenProducts, 
-  clearWomenProducts, 
-  clearBeautyProducts, 
-  clearKidsProducts, 
-  clearHomeProducts 
+export const {
+  setMenPage,
+  setWomenPage,
+  setBeautyPage,
+  setKidsPage,
+  setHomePage,
+  clearMenProducts,
+  clearWomenProducts,
+  clearBeautyProducts,
+  clearKidsProducts,
+  clearHomeProducts,
 } = categoryProductsSlice.actions;
 
 export default categoryProductsSlice.reducer;

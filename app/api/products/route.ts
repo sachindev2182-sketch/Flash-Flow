@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
+    const subcategory = searchParams.get("subcategory");
     const limit = parseInt(searchParams.get("limit") || "10");
     const page = parseInt(searchParams.get("page") || "1");
 
@@ -17,6 +18,11 @@ export async function GET(req: NextRequest) {
     let filter: any = {};
     if (category && category !== "all") {
       filter.category = category;
+    }
+    
+    // Add subcategory filter if provided
+    if (subcategory) {
+      filter.subcategory = subcategory;
     }
 
     const products = await Product.find(filter)
@@ -27,7 +33,10 @@ export async function GET(req: NextRequest) {
 
     const transformedProducts = products.map(product => ({
       ...product,
-      id: product._id.toString(), 
+      id: product._id.toString(),
+      // Map MongoDB fields to CategoryProduct interface
+      isNew: product.isNewArrival || false,
+      isTrending: product.isTrending || false,
     }));
 
     const total = await Product.countDocuments(filter);
